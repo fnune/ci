@@ -44,8 +44,8 @@ export PATH
 git config --global --add safe.directory '*'
 
 run() {
-	if [ -f flake.nix ]; then
-		nix develop --command bash -euo pipefail -c "$1"
+	if [ -f flake.nix ] && [ -n "${DEV_SHELL-default}" ]; then
+		nix develop ".#${DEV_SHELL:-default}" --command bash -euo pipefail -c "$1"
 	else
 		bash -euo pipefail -c "$1"
 	fi

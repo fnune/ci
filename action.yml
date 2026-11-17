@@ -5,6 +5,9 @@ inputs:
   command:
     description: The command to run, in the repository's Nix dev shell if it has a flake.nix.
     required: true
+  dev-shell:
+    description: The flake dev shell to run the command in. Empty runs it outside Nix's dev shells.
+    default: default
   apt-packages:
     description: Debian packages that the command needs and Nix does not provide well, separated by spaces.
     default: ""
@@ -15,7 +18,7 @@ inputs:
     description: Paths under the container's home to keep between runs, one on each line, such as .cache/go-build.
     default: ""
   cache-key-files:
-    description: A glob of files whose contents decide when cache-paths start again, such as **/go.sum.
+    description: A glob of files whose contents decide when cache-paths start again, such as **/go.sum. A change to flake.lock always starts them again.
     default: ""
   working-directory:
     description: The directory to run the command in, relative to the workspace.
@@ -73,14 +76,15 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.paths }}
-        key: ci-home-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles(inputs.cache-key-files) }}
+        key: ci-home-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles(format('{0}/flake.lock', inputs.working-directory)) }}-${{ hashFiles(inputs.cache-key-files) }}
         restore-keys: |
-          ci-home-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+          ci-home-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles(format('{0}/flake.lock', inputs.working-directory)) }}-
 
     - name: Run the command
       shell: bash
       env:
         COMMAND: ${{ inputs.command }}
+        DEV_SHELL: ${{ inputs.dev-shell }}
         APT_PACKAGES: ${{ inputs.apt-packages }}
         PASS_ENV: ${{ inputs.env }}
         RELEASE: ${{ inputs.release }}
@@ -100,6 +104,7 @@ runs:
       shell: bash
       env:
         COMMAND: publish-github "$TAG" "$RELEASE_DIR"
+        DEV_SHELL: ""
         PASS_ENV: GH_TOKEN
         GH_TOKEN: ${{ github.token }}
         RELEASE_DIR: ${{ inputs.release-dir }}

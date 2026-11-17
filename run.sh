@@ -13,7 +13,7 @@ if [ "${CI:-}" = true ] && [ "$(cat "$userns_restriction" 2>/dev/null || echo 0)
 fi
 
 pass=(
-	--env COMMAND --env APT_PACKAGES --env RELEASE --env RELEASE_DIR --env TAG
+	--env COMMAND --env DEV_SHELL --env APT_PACKAGES --env RELEASE --env RELEASE_DIR --env TAG
 	--env CI --env GITHUB_ACTIONS --env GITHUB_REPOSITORY --env GITHUB_SHA --env GITHUB_REF_NAME
 )
 for name in ${PASS_ENV:-}; do
