@@ -56,8 +56,11 @@ nearest_flake() {
 
 run() {
 	flake=$(nearest_flake)
-	if [ -n "$flake" ] && [ -n "${DEV_SHELL-default}" ]; then
-		nix develop "$flake#${DEV_SHELL:-default}" --command bash -euo pipefail -c "$1"
+	shell=${DEV_SHELL-default}
+	if [ -n "$flake" ] && [ "$shell" = default ]; then
+		nix develop "$flake" --command bash -euo pipefail -c "$1"
+	elif [ -n "$flake" ] && [ -n "$shell" ]; then
+		nix develop "$flake#$shell" --command bash -euo pipefail -c "$1"
 	else
 		bash -euo pipefail -c "$1"
 	fi
