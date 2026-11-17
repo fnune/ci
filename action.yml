@@ -39,13 +39,18 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Identify this version of ci
+      id: ci
+      shell: bash
+      run: echo "version=$(cat "$GITHUB_ACTION_PATH/flake.lock" "$GITHUB_ACTION_PATH/entry.sh" | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
     - name: Restore the Nix store
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/ci/nix
-        key: ci-nix-${{ runner.os }}-${{ runner.arch }}-${{ github.action_ref }}-${{ hashFiles(format('{0}/flake.lock', inputs.working-directory)) }}
+        key: ci-nix-${{ runner.os }}-${{ runner.arch }}-${{ steps.ci.outputs.version }}-${{ hashFiles(format('{0}/flake.lock', inputs.working-directory)) }}
         restore-keys: |
-          ci-nix-${{ runner.os }}-${{ runner.arch }}-${{ github.action_ref }}-
+          ci-nix-${{ runner.os }}-${{ runner.arch }}-${{ steps.ci.outputs.version }}-
           ci-nix-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Locate the cached paths
