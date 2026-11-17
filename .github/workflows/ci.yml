@@ -33,6 +33,8 @@ jobs:
           command: |
             hello | grep -qx 'Hello, world!'
             test "$(id -u)" != 0
+            test -d "$XDG_RUNTIME_DIR"
+            dbus-send --session --dest=org.freedesktop.DBus --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /dev/null
       - name: Build in Nix's sandbox, which cannot see the container's files
         uses: ./
         with:

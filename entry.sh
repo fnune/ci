@@ -18,7 +18,7 @@ prepare_as_root() {
 	export DEBIAN_FRONTEND=noninteractive
 	apt-get update -qq
 	# shellcheck disable=SC2086 # APT_PACKAGES is a list of package names
-	apt-get install -qq --no-install-recommends bash ca-certificates curl git xz-utils ${APT_PACKAGES:-} >/dev/null
+	apt-get install -qq --no-install-recommends bash ca-certificates curl dbus git xz-utils ${APT_PACKAGES:-} >/dev/null
 
 	mkdir -p /etc/nix
 	cat >/etc/nix/nix.conf <<CONF
@@ -73,6 +73,11 @@ if [ "$(id -u)" = 0 ]; then
 fi
 
 [ -x "$nix_bin/nix" ] || install_nix
+
+XDG_RUNTIME_DIR=$(mktemp -d)
+DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+export XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS
+dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS" >/dev/null
 
 tools=$("$nix_bin/nix" build --no-link --print-out-paths path:/ci#default)
 PATH=$tools/bin:$nix_bin:$PATH
