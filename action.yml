@@ -1,0 +1,103 @@
+name: ci
+description: Run a command in a pinned Debian 12 container with Nix. Optionally publish the pushed tag as a release.
+
+inputs:
+  command:
+    description: The command to run, in the repository's Nix dev shell if it has a flake.nix.
+    required: true
+  apt-packages:
+    description: Debian packages that the command needs and Nix does not provide well, separated by spaces.
+    default: ""
+  env:
+    description: Names of environment variables to pass into the container, separated by spaces.
+    default: ""
+  cache-paths:
+    description: Paths under the container's home to keep between runs, one on each line, such as .cache/go-build.
+    default: ""
+  cache-key-files:
+    description: A glob of files whose contents decide when cache-paths start again, such as **/go.sum.
+    default: ""
+  working-directory:
+    description: The directory to run the command in, relative to the workspace.
+    default: "."
+  release:
+    description: Build the tag as a release. The command must put the files to publish in release-dir.
+    default: "false"
+  tag:
+    description: The tag to release.
+    default: ${{ github.ref_name }}
+  publish:
+    description: Publish the release. Without it, the release files stay in release-dir.
+    default: "true"
+  release-dir:
+    description: The directory where the release command puts its files.
+    default: dist
+  attest:
+    description: Attest the release files with GitHub. The job needs the id-token and attestations permissions.
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Restore the Nix store
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ci/nix
+        key: ci-nix-${{ runner.os }}-${{ runner.arch }}-${{ github.action_ref }}-${{ hashFiles(format('{0}/flake.lock', inputs.working-directory)) }}
+        restore-keys: |
+          ci-nix-${{ runner.os }}-${{ runner.arch }}-${{ github.action_ref }}-
+          ci-nix-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Locate the cached paths
+      id: cache-paths
+      if: inputs.cache-paths != ''
+      shell: bash
+      env:
+        CACHE_PATHS: ${{ inputs.cache-paths }}
+      run: |
+        {
+          echo "paths<<EOF"
+          while IFS= read -r path; do
+            [ -n "$path" ] && echo "$RUNNER_TEMP/ci/home/$path"
+          done <<< "$CACHE_PATHS"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Restore the cached paths
+      if: inputs.cache-paths != ''
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.cache-paths.outputs.paths }}
+        key: ci-home-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles(inputs.cache-key-files) }}
+        restore-keys: |
+          ci-home-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+    - name: Run the command
+      shell: bash
+      env:
+        COMMAND: ${{ inputs.command }}
+        APT_PACKAGES: ${{ inputs.apt-packages }}
+        PASS_ENV: ${{ inputs.env }}
+        RELEASE: ${{ inputs.release }}
+        RELEASE_DIR: ${{ inputs.release-dir }}
+        TAG: ${{ inputs.tag }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: "$GITHUB_ACTION_PATH/run.sh"
+
+    - name: Attest the release files
+      if: inputs.release == 'true' && inputs.attest == 'true'
+      uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+      with:
+        subject-path: ${{ inputs.working-directory }}/${{ inputs.release-dir }}/*
+
+    - name: Publish the release
+      if: inputs.release == 'true' && inputs.publish == 'true'
+      shell: bash
+      env:
+        COMMAND: publish-github "$TAG" "$RELEASE_DIR"
+        PASS_ENV: GH_TOKEN
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_DIR: ${{ inputs.release-dir }}
+        TAG: ${{ inputs.tag }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: "$GITHUB_ACTION_PATH/run.sh"

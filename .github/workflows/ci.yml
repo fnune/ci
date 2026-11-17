@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: ./
+        with:
+          command: nix flake check --print-build-logs && scan-secrets
+
+  action:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run a command in the fixture's dev shell
+        uses: ./
+        with:
+          working-directory: tests/fixture
+          command: hello | grep -qx 'Hello, world!'
+      - name: Build in Nix's sandbox, which cannot see the container's files
+        uses: ./
+        with:
+          working-directory: tests/fixture
+          command: nix build --no-link --impure --file sandbox.nix
+      - name: Build the fixture's release without publishing it
+        uses: ./
+        with:
+          working-directory: tests/fixture
+          command: mkdir -p dist && hello > dist/greeting
+          release: true
+          tag: v0.1.0
+          attest: false
+          publish: false
+      - name: Check the release files on the runner
+        working-directory: tests/fixture/dist
+        run: |
+          sha256sum -c SHA256SUMS
+          grep -q '  greeting$' SHA256SUMS
+          test -O greeting
