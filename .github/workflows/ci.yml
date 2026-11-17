@@ -47,6 +47,11 @@ jobs:
           tag: v0.1.0
           attest: false
           publish: false
+      - name: Use the dev shell of the flake above the working directory
+        uses: ./
+        with:
+          working-directory: tests/fixture/.changes
+          command: hello | grep -qx 'Hello, world!'
       - name: Keep a file in the home and one in the workspace
         uses: ./
         with:

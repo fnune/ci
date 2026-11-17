@@ -46,9 +46,18 @@ install_nix() {
 	rm -rf "$work"
 }
 
+nearest_flake() {
+	dir=$PWD
+	while [ "$dir" != / ]; do
+		[ -f "$dir/flake.nix" ] && echo "$dir" && return
+		dir=$(dirname "$dir")
+	done
+}
+
 run() {
-	if [ -f flake.nix ] && [ -n "${DEV_SHELL-default}" ]; then
-		nix develop ".#${DEV_SHELL:-default}" --command bash -euo pipefail -c "$1"
+	flake=$(nearest_flake)
+	if [ -n "$flake" ] && [ -n "${DEV_SHELL-default}" ]; then
+		nix develop "$flake#${DEV_SHELL:-default}" --command bash -euo pipefail -c "$1"
 	else
 		bash -euo pipefail -c "$1"
 	fi

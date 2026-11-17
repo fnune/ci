@@ -30,7 +30,7 @@ jobs:
           cache-key-files: "**/go.sum"
 ```
 
-The command runs inside `nix develop` when the repository has a `flake.nix`, so the repository's dev shell provides its toolchain. `dev-shell` picks another of its dev shells. Run several jobs to run commands in parallel.
+The command runs inside `nix develop` of the nearest `flake.nix` at or above `working-directory`, so the repository's dev shell provides its toolchain. `dev-shell` picks another of its dev shells. Run several jobs to run commands in parallel.
 
 | Input | Default | What it does |
 | --- | --- | --- |

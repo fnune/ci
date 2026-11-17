@@ -3,7 +3,7 @@ description: Run a command in a pinned Debian 12 container with Nix. Optionally 
 
 inputs:
   command:
-    description: The command to run, in the repository's Nix dev shell if it has a flake.nix.
+    description: The command to run, in the dev shell of the nearest flake.nix at or above working-directory.
     required: true
   dev-shell:
     description: The flake dev shell to run the command in. Empty runs it outside Nix's dev shells.
