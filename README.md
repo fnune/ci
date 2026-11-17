@@ -8,6 +8,7 @@ Shared CI for my public repositories. One GitHub Action runs a repository's own 
 - Debian 12 sets glibc 2.36 as the floor, so binaries and AppImages built here run on systems from 2022 onward, SteamOS included.
 - The runner is only the host. Nothing runs on its Ubuntu directly. The container runs under rootless podman, so it holds no more rights than the runner's own user.
 - Nix builds in its sandbox, always. A build that cannot be sandboxed fails.
+- The command runs as an ordinary user with the runner's own UID, as it would on a developer's machine. Tests that check file permissions or refuse root behave as they do locally.
 - The tools are a Nix flake, so they run the same way locally, here, or under another forge.
 
 ## Use
@@ -37,7 +38,7 @@ The command runs inside `nix develop` when the repository has a `flake.nix`, so 
 | `dev-shell` | `default` | The flake dev shell to run the command in. Empty runs it outside Nix's dev shells. |
 | `apt-packages` | | Debian packages the command needs and Nix does not provide well, such as the libraries Playwright's Chromium links against. |
 | `env` | | Names of environment variables to pass into the container. |
-| `cache-paths` | | Paths under the container's home to keep between runs, one on each line. |
+| `cache-paths` | | Paths under the container user's home, `/home/ci`, to keep between runs, one on each line. |
 | `cache-key-files` | | A glob of files whose contents decide when `cache-paths` start again. A change to `flake.lock` always starts them again, because build caches such as Go's do not notice a changed toolchain. |
 | `working-directory` | `.` | Where to run the command, relative to the workspace. |
 | `release` | `false` | Build `tag` as a release. |

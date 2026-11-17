@@ -13,6 +13,7 @@ if [ "${CI:-}" = true ] && [ "$(cat "$userns_restriction" 2>/dev/null || echo 0)
 fi
 
 pass=(
+	--env HOST_UID="$(id -u)" --env HOST_GID="$(id -g)"
 	--env COMMAND --env DEV_SHELL --env APT_PACKAGES --env RELEASE --env RELEASE_DIR --env TAG
 	--env CI --env GITHUB_ACTIONS --env GITHUB_REPOSITORY --env GITHUB_SHA --env GITHUB_REF_NAME
 )
@@ -20,8 +21,8 @@ for name in ${PASS_ENV:-}; do
 	pass+=(--env "$name")
 done
 
-exec podman run --rm \
+exec podman run --rm --userns=keep-id --user 0:0 \
 	--security-opt seccomp=unconfined --security-opt systempaths=unconfined \
 	--volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" --workdir "$GITHUB_WORKSPACE/${WORKING_DIRECTORY:-.}" \
-	--volume "$state/nix:/nix" --volume "$state/home:/root" --volume "$ci:/ci:ro" \
+	--volume "$state/nix:/nix" --volume "$state/home:/home/ci" --volume "$ci:/ci:ro" \
 	"${pass[@]}" "$image" /ci/entry.sh
