@@ -47,6 +47,18 @@ jobs:
           tag: v0.1.0
           attest: false
           publish: false
+      - name: Keep a file in the home and one in the workspace
+        uses: ./
+        with:
+          working-directory: tests/fixture
+          cache-paths: |
+            .cache/fixture
+            ./.cache-in-workspace
+          cache-key-files: tests/fixture/flake.lock
+          command: |
+            mkdir -p ~/.cache/fixture .cache-in-workspace
+            echo kept > ~/.cache/fixture/file
+            echo kept > .cache-in-workspace/file
       - name: Check the release files on the runner
         working-directory: tests/fixture/dist
         run: |

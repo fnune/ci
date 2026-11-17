@@ -38,7 +38,7 @@ The command runs inside `nix develop` when the repository has a `flake.nix`, so 
 | `dev-shell` | `default` | The flake dev shell to run the command in. Empty runs it outside Nix's dev shells. |
 | `apt-packages` | | Debian packages the command needs and Nix does not provide well, such as the libraries Playwright's Chromium links against. |
 | `env` | | Names of environment variables to pass into the container. |
-| `cache-paths` | | Paths under the container user's home, `/home/ci`, to keep between runs, one on each line. |
+| `cache-paths` | | Paths to keep between runs, one on each line: under the container user's home, `/home/ci`, such as `.cache/go-build`, or under `working-directory` when they start with `./`, such as `./target`. |
 | `cache-key-files` | | A glob of files whose contents decide when `cache-paths` start again. A change to `flake.lock` always starts them again, because build caches such as Go's do not notice a changed toolchain. |
 | `working-directory` | `.` | Where to run the command, relative to the workspace. |
 | `release` | `false` | Build `tag` as a release. |

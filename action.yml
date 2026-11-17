@@ -15,7 +15,7 @@ inputs:
     description: Names of environment variables to pass into the container, separated by spaces.
     default: ""
   cache-paths:
-    description: Paths under the container's home to keep between runs, one on each line, such as .cache/go-build.
+    description: Paths to keep between runs, one on each line. A path is under the container user's home, such as .cache/go-build, or under working-directory when it starts with ./, such as ./target.
     default: ""
   cache-key-files:
     description: A glob of files whose contents decide when cache-paths start again, such as **/go.sum. A change to flake.lock always starts them again.
@@ -62,11 +62,16 @@ runs:
       shell: bash
       env:
         CACHE_PATHS: ${{ inputs.cache-paths }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
       run: |
         {
           echo "paths<<EOF"
           while IFS= read -r path; do
-            [ -n "$path" ] && echo "$RUNNER_TEMP/ci/home/$path"
+            case $path in
+            "") ;;
+            ./*) echo "$GITHUB_WORKSPACE/$WORKING_DIRECTORY/${path#./}" ;;
+            *) echo "$RUNNER_TEMP/ci/home/$path" ;;
+            esac
           done <<< "$CACHE_PATHS"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
