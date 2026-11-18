@@ -1,0 +1,2 @@
+description = "ci: CI action and its scripts, with tools from the flake"
+modules = ["vcs-readwrite", "docs", "nix"]
