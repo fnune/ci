@@ -28,6 +28,9 @@ max-jobs = auto
 sandbox = true
 sandbox-fallback = false
 CONF
+	if [ "${KVM:-false}" = true ]; then
+		echo "extra-system-features = kvm nixos-test" >>/etc/nix/nix.conf
+	fi
 
 	groupadd --non-unique --gid "${HOST_GID:?}" "$user"
 	useradd --non-unique --uid "${HOST_UID:?}" --gid "$HOST_GID" --home-dir "$home" --shell /bin/bash "$user"
