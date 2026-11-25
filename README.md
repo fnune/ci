@@ -9,6 +9,7 @@ Shared CI for my public repositories. One GitHub Action runs a repository's own 
 - The runner is only the host. Nothing runs on its Ubuntu directly. The container runs under rootless podman, so it holds no more rights than the runner's own user.
 - Nix builds in its sandbox, always. A build that cannot be sandboxed fails.
 - The command runs as an ordinary user with the runner's own UID, as it would on a developer's machine. Tests that check file permissions or refuse root behave as they do locally.
+- `/etc` holds plain files, as on a machine, with none of them mounted from outside. The runtime's bind mounts of `resolv.conf`, `hosts` and `hostname` are copied in as files, so that a tool under test can overlay `/etc` with bubblewrap.
 - Like a login session, the command has an `XDG_RUNTIME_DIR` and a D-Bus session bus, which compositors and desktop apps under test expect.
 - The tools are a Nix flake, so they run the same way locally, here, or under another forge.
 

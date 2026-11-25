@@ -14,7 +14,19 @@ nix_bin=/nix/var/ci/bin
 user=ci
 home=/home/$user
 
+copy_etc_files_out_of_mounts() {
+	for name in resolv.conf hosts hostname; do
+		if grep -q " /etc/$name " /proc/self/mountinfo; then
+			cp "/etc/$name" "/run/$name.copy"
+			umount "/etc/$name"
+			cp "/run/$name.copy" "/etc/$name"
+			rm "/run/$name.copy"
+		fi
+	done
+}
+
 prepare_as_root() {
+	copy_etc_files_out_of_mounts
 	export DEBIAN_FRONTEND=noninteractive
 	apt-get update -qq
 	# shellcheck disable=SC2086 # APT_PACKAGES is a list of package names
@@ -71,7 +83,7 @@ run() {
 
 if [ "$(id -u)" = 0 ]; then
 	prepare_as_root
-	exec setpriv --reuid="$HOST_UID" --regid="$HOST_GID" --init-groups \
+	exec setpriv --reuid="$HOST_UID" --regid="$HOST_GID" --init-groups --bounding-set=-sys_admin \
 		env HOME="$home" USER="$user" LOGNAME="$user" "$0"
 fi
 

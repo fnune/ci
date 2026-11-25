@@ -32,7 +32,7 @@ for name in ${PASS_ENV:-}; do
 done
 
 exec podman run --rm --userns=keep-id --user 0:0 \
-	--security-opt seccomp=unconfined --security-opt systempaths=unconfined \
+	--cap-add SYS_ADMIN --security-opt seccomp=unconfined --security-opt systempaths=unconfined \
 	--volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" --workdir "$GITHUB_WORKSPACE/${WORKING_DIRECTORY:-.}" \
 	--volume "$state/nix:/nix" --volume "$state/home:/home/ci" --volume "$ci:/ci:ro" \
 	"${kvm[@]}" "${pass[@]}" "$image" /ci/entry.sh
