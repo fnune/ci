@@ -17,6 +17,10 @@ fragment)
 	;;
 release)
 	tag=$2
+	if [ ! -d .changes ] && [ -f cliff.toml ]; then
+		grep -q "^## \[${tag#v}\]" CHANGELOG.md 2>/dev/null || fail "CHANGELOG.md has no section for ${tag#v}. Run git-cliff --tag $tag --unreleased --prepend CHANGELOG.md."
+		exit 0
+	fi
 	[ -f ".changes/$tag.md" ] || fail ".changes/$tag.md does not exist. Run changie batch for $tag."
 	if find .changes/unreleased -type f ! -name .gitkeep 2>/dev/null | grep -q .; then
 		fail ".changes/unreleased still has fragments that $tag does not include."

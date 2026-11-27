@@ -80,13 +80,16 @@ jobs:
 
 The action then:
 
-1. Checks the changelog with `check-changelog release`: `.changes/<tag>.md` exists, no fragments are left unreleased, and `CHANGELOG.md` matches `changie merge`.
+1. Checks the changelog with `check-changelog release`.
 2. Runs the command, which puts the files to publish in `release-dir`.
 3. Writes `SHA256SUMS` next to them.
 4. Attests the files, unless `attest` is `false`.
-5. Publishes the release with the notes from `.changes/<tag>.md`.
+5. Publishes the release with `release-notes <tag>`. If the release already exists, as when GitHub delivers one tag push twice, its files are replaced.
 
-Changelogs use [changie](https://changie.dev). Each change adds a fragment with `changie new`. A release runs `changie batch <version>` and `changie merge`, then tags.
+Changelogs use one of two tools:
+
+- [changie](https://changie.dev), when the repository has `.changes/`. Each change adds a fragment with `changie new`. A release runs `changie batch <version>` and `changie merge`, then tags. The check needs `.changes/<tag>.md`, no unreleased fragments, and a `CHANGELOG.md` that matches `changie merge`. The notes come from `.changes/<tag>.md`.
+- [git-cliff](https://git-cliff.org), when the repository has `cliff.toml` and no `.changes/`. Commits follow Conventional Commits. A release runs `git-cliff --tag <tag> --unreleased --prepend CHANGELOG.md`, then tags. The check needs a `## [<version>]` section in `CHANGELOG.md`. The notes are git-cliff's for the commits since the previous tag, so check out with `fetch-depth: 0`.
 
 ## Tools
 
@@ -95,12 +98,12 @@ The flake's tools work in any CI and locally, with `nix run github:fnune/ci#<too
 | Tool | What it does |
 | --- | --- |
 | `check-changelog fragment <base>` | Fails unless the branch adds a changie fragment since `<base>`. |
-| `check-changelog release <tag>` | Fails unless the changelog is ready to release `<tag>`. |
+| `check-changelog release <tag>` | Fails unless the changelog is ready to release `<tag>`, with changie or git-cliff. |
 | `release-notes <tag>` | Prints the notes for `<tag>`. |
 | `checksums <dir>` | Writes `SHA256SUMS` for the files in `<dir>`. |
 | `lint-workflows` | Runs actionlint and zizmor. A repository can override the defaults with its own `.github/actionlint.yaml` or `zizmor.yml`. |
 | `scan-secrets` | Runs gitleaks over the history. |
-| `publish-github <tag> <dir>` | Creates the GitHub release for `<tag>` with the files in `<dir>`. |
+| `publish-github <tag> <dir>` | Creates the GitHub release for `<tag>` with the files in `<dir>`, or replaces its files if it exists. |
 
 Only `action.yml` and `publish-github` depend on GitHub.
 

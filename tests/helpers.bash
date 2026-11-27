@@ -24,3 +24,18 @@ release() {
 	git add -A
 	git commit -qm "$1"
 }
+
+make_cliff_repo() {
+	cd "$BATS_TEST_TMPDIR" || return 1
+	git init -q -b main cliff-repo
+	cd cliff-repo || return 1
+	git config user.email ci@example.org
+	git config user.name ci
+	cp "$BATS_TEST_DIRNAME/cliff.toml" .
+	git add -A
+	git commit -qm "chore: start"
+}
+
+commit() {
+	git commit -q --allow-empty -m "$1"
+}

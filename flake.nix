@@ -21,11 +21,11 @@
           };
         };
     in rec {
-      check-changelog = tool "check-changelog" [pkgs.changie pkgs.diffutils pkgs.findutils pkgs.git];
+      check-changelog = tool "check-changelog" [pkgs.changie pkgs.diffutils pkgs.findutils pkgs.git pkgs.gnugrep];
       checksums = tool "checksums" [pkgs.coreutils pkgs.findutils];
       lint-workflows = tool "lint-workflows" [pkgs.actionlint pkgs.findutils pkgs.shellcheck pkgs.zizmor];
       publish-github = tool "publish-github" [pkgs.coreutils pkgs.findutils pkgs.gh release-notes];
-      release-notes = tool "release-notes" [pkgs.coreutils pkgs.gnused];
+      release-notes = tool "release-notes" [pkgs.coreutils pkgs.git pkgs.git-cliff pkgs.gnused];
       scan-secrets = tool "scan-secrets" [pkgs.gitleaks];
     };
   in {
@@ -71,7 +71,7 @@
 
       tests =
         pkgs.runCommand "ci-tests" {
-          nativeBuildInputs = [bats tools.default pkgs.changie pkgs.git];
+          nativeBuildInputs = [bats tools.default pkgs.changie pkgs.git pkgs.git-cliff];
         } ''
           export HOME=$TMPDIR
           bats ${./tests}

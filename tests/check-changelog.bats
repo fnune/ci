@@ -63,3 +63,18 @@ setup() {
 	assert_failure 2
 	assert_output --partial "usage"
 }
+
+@test "with cliff.toml, a release whose tag has a CHANGELOG.md section passes" {
+	make_cliff_repo
+	printf '## [1.0.0] - 2026-11-27\n\n- Pair devices\n' >CHANGELOG.md
+	run check-changelog release v1.0.0
+	assert_success
+}
+
+@test "with cliff.toml, a release without a CHANGELOG.md section fails and says how to write it" {
+	make_cliff_repo
+	printf '## [0.9.0] - 2026-11-20\n' >CHANGELOG.md
+	run check-changelog release v1.0.0
+	assert_failure
+	assert_output --partial "git-cliff --tag v1.0.0"
+}
