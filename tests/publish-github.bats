@@ -11,6 +11,10 @@ setup() {
 	echo "#!$(command -v bash)" >"$BATS_TEST_TMPDIR/bin/gh"
 	cat >>"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
 printf '%s\n' "$@" >"$BATS_TEST_TMPDIR/gh-args"
+echo "$1 $2" >>"$BATS_TEST_TMPDIR/gh-calls"
+if [ "$2" = upload ]; then printf '%s\n' "$@" >"$BATS_TEST_TMPDIR/gh-upload-args"; fi
+if [ "$2" = create ] && [ -e "$BATS_TEST_TMPDIR/release-exists" ]; then exit 1; fi
+if [ "$2" = view ] && [ ! -e "$BATS_TEST_TMPDIR/release-exists" ]; then exit 1; fi
 while [ $# -gt 0 ]; do
 	[ "$1" = --notes-file ] && cp "$2" "$BATS_TEST_TMPDIR/gh-notes"
 	shift
@@ -45,4 +49,26 @@ GH
 	assert_failure
 	assert_output --partial GH_TOKEN
 	assert [ ! -e "$BATS_TEST_TMPDIR/gh-args" ]
+}
+
+@test "a release that already exists gets its files replaced" {
+	touch "$BATS_TEST_TMPDIR/release-exists"
+	run publish-github v1.0.0 dist
+	assert_success
+	run cat "$BATS_TEST_TMPDIR/gh-calls"
+	assert_output "$(printf 'release create\nrelease view\nrelease upload')"
+	run cat "$BATS_TEST_TMPDIR/gh-upload-args"
+	assert_line --clobber
+	assert_line dist/app
+	assert_line dist/SHA256SUMS
+}
+
+@test "a create that fails for another reason fails without uploading" {
+	cat >>"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
+[ "$2" = create ] && exit 1
+GH
+	run publish-github v1.0.0 dist
+	assert_failure
+	run cat "$BATS_TEST_TMPDIR/gh-calls"
+	refute_output --partial upload
 }
